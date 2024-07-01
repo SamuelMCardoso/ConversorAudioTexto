@@ -1,3 +1,6 @@
+from io import BytesIO
+
+import requests
 import speech_recognition as sr
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -6,10 +9,18 @@ from sklearn.metrics import classification_report
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline, make_pipeline
 
+
+class AudioSegment:
+    @classmethod
+    def from_mp3(cls, audio_data):
+        pass
+
+
 def main():
 
     recognizer = sr.Recognizer()
-    data = pd.read_csv('2019-05-28_portuguese_hate_speech_hierarchical_classification.csv')
+    csv_path= r"C:\Users\samir\OneDrive\Documents\Python\2019-05-28_portuguese_hate_speech_hierarchical_classification.csv"
+    data = pd.read_csv(csv_path)
     X_train, X_test, y_train, y_test = train_test_split(data['text'], data['label'], test_size=0.2, random_state=42)
 
     model = make_pipeline(TfidfVectorizer(), MultinomialNB())
@@ -21,9 +32,18 @@ def main():
         prediction = model.predict([text])
         return "Conteúdo pejorativo detectado." if prediction == 1 else "Conteúdo adequado."
 
-    audio_file = sr.AudioFile('audio_file.wav')
-    with audio_file as source:
-    audio = recognizer.record(source)
+    audio_url = 'https://www.orangefreesounds.com/wp-content/uploads/2021/02/Ambient-music-loop.mp3'
+    response = requests.get(audio_url)
+    audio_data = BytesIO(response.content)
+
+    # Converte o áudio de MP3 para WAV usando pydub
+    audio_segment = AudioSegment.from_mp3(audio_data)
+    audio_wav = BytesIO()
+    audio_segment.export(audio_wav, format="wav")
+    audio_wav.seek(0)
+
+    with sr.AudioFile(audio_wav) as source:
+        audio = recognizer.record(source)
 
     try:
 
